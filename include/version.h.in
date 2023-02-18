@@ -1,0 +1,10 @@
+#pragma once
+
+namespace ${PROJECT_NAME}::version {
+
+static constexpr int Major = @simpletest_VERSION_MAJOR@;
+static constexpr int Minor = @simpletest_VERSION_MINOR@;
+static constexpr int Patch = @simpletest_VERSION_PATCH@;
+static constexpr int Git   = @simpletest_VERSION_TWEAK@;
+
+} // namespace ${PROJECT_NAME}::version
