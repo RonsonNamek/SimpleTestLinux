@@ -2,6 +2,7 @@
 #include <iostream>
 #include <set>
 
+#include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "simpletest/nameofenum.h"
 #include "version.h"
@@ -19,6 +20,8 @@ enum class Color : uint16_t {
 
 int main(int argc, char* argv[])
 {
+    google::ParseCommandLineFlags(&argc, &argv, true);
+
     // Initialize Google's logging library.
 #if LOG_TO_STDERR_ONLY
     FLAGS_colorlogtostderr = true;

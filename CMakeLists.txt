@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.25)
+cmake_minimum_required (VERSION 3.26)
 
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "
@@ -12,7 +12,6 @@ endif()
 #                OUTPUT_VARIABLE CLANG_PATH)
 #string(STRIP "${CLANG_PATH}" CLANG_PATH)
 set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
 
 # 默认编译类型为 Release
 if (NOT CMAKE_BUILD_TYPE)
@@ -44,8 +43,8 @@ set(BUILD_TESTING OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 缓存编译选项
-set(CMAKE_CXX_STANDARD 20 CACHE INTERNAL "need cxx 20")
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE CACHE INTERNAL "required cxx 20")
+set(CMAKE_CXX_STANDARD 23 CACHE INTERNAL "need cxx 23")
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE CACHE INTERNAL "required cxx 23")
 
 message(STATUS "CMAKE_CXX_COMPILE_ID: ${CMAKE_CXX_COMPILER_ID}")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -56,7 +55,7 @@ endif()
 SET(BUILD_SHARED_LIBS ON)
 
 # 编译选项
-add_compile_options(-Wall -Wextra -Wpedantic -stdlib=libc++)
+add_compile_options(-stdlib=libc++)
 
 # 更新 git 子模块
 find_package(Git)
@@ -70,24 +69,49 @@ if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 endif()
 
 # 编译子模块
+#set(GFLAGS_IS_A_DLL ON)
 set(GFLAGS_BUILD_SHARED_LIBS ON)
 set(GFLAGS_BUILD_STATIC_LIBS OFF)
 set(GFLAGS_BUILD_gflags_LIB ON)
-set(GFLAGS_BUILD_TESTING OFF)
-set(GFLAGS_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/gflags")
-set(GFLAGS_INSTALL_HEADERS "${PROJECT_SOURCE_DIR}/include/gflags-head")
-set(GFLAGS_INSTALL_SHARED_LIBS "${CMAKE_SOURCE_DIR}/lib/gflags")
+set(GFLAGS_BUILD_gflags_nothreads_LIB OFF)
+#set(GFLAGS_INCLUDE_DIR "gflags")
+set(GFLAGS_INSTALL_HEADERS ON)
+set(GFLAGS_INSTALL_SHARED_LIBS ON)
+set(GFLAGS_INSTALL_STATIC_LIBS ON)
+set(GFLAGS_NAMESPACE "google")
+set(GFLAGS_LIBRARY_INSTALL_DIR "lib64")
 message(STATUS "compile gflags")
 add_subdirectory(third_party/gflags)
 
+set(gflags_DIR "${PROJECT_SOURCE_DIR}/install/lib64/cmake/gflags")
 #set(gflags_DIR "${CMAKE_BINARY_DIR}/third_party/gflags")
+#find_package(gflags REQUIRED)
+
 set(WITH_GTEST OFF)
 set(WITH_UNWIND OFF)
 message(STATUS "compile glog")
+set(BUILD_TESTING OFF)
+set(WITH_GFLAGS ON)
+set(WITH_CUSTOM_PREFIX OFF)
+set(WITH_SYMBOLIZE OFF)
+set(WITH_UNWIND OFF)
+set(WITH_TLS OFF)
 add_subdirectory(third_party/glog)
 #target_link_libraries(glog PUBLIC gflags::gflags)
 #target_link_libraries (glog
 #    PRIVATE gflags::gflags)
+
+# mimalloc设置
+set(MI_BUILD_SHARED ON)
+set(MI_BUILD_STATIC OFF)
+set(MI_BUILD_OBJECT OFF)
+cmake_dependent_option(MI_BUILD_TESTS "Build mimalloc tests" ON "BUILD_TESTING" OFF)
+if (ENABLE_ASAN)
+    cmake_dependent_option(MI_TRACK_ASAN "Build mimalloc address sanitizer" ON "ENABLE_ASAN" OFF)
+    cmake_dependent_option(MI_DEBUG_TSAN "Build mimalloc thread sanitizer" OFF "MI_TRACK_ASAN" ON)
+    cmake_dependent_option(MI_DEBUG_UBSAN "Build mimalloc undefined-behavior sanitizer" ON "ENABLE_ASAN" OFF)
+endif()
+add_subdirectory(third_party/mimalloc)
 
 # 生成目录
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
@@ -117,11 +141,28 @@ target_include_directories(
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
+target_compile_options(
+    ${PROJECT_NAME}
+    PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wconversion
+        -Wno-sign-conversion
+        -Wno-missing-field-initializers
+        -Wshadow
+        -Wnon-virtual-dtor
+        -Wcast-align
+        -Wfatal-errors
+        -Wextra-semi
+        )
+
 # 依赖
 target_link_libraries (${PROJECT_NAME}
     PUBLIC dbpool
     PUBLIC glog::glog
-    PUBLIC gflags::gflags)
+    PUBLIC gflags::gflags
+    PUBLIC mimalloc)
 
 if (SIMPLETEST_BUILD_TESTS)
     include(CTest)
