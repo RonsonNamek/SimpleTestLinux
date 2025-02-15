@@ -7,12 +7,6 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
            ")
 endif()
 
-# 临时设置编译器为 clang++
-#execute_process(COMMAND which clang++
-#                OUTPUT_VARIABLE CLANG_PATH)
-#string(STRIP "${CLANG_PATH}" CLANG_PATH)
-set(CMAKE_CXX_COMPILER clang++)
-
 # 默认编译类型为 Release
 if (NOT CMAKE_BUILD_TYPE)
     if ("${CMAKE_BINARY_DIR}" MATCHES ".*(D|d)ebug$")
@@ -41,6 +35,8 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
 set(BUILD_TESTING OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(Threads REQUIRED)
 
 # 缓存编译选项
 set(CMAKE_CXX_STANDARD 23 CACHE INTERNAL "need cxx 23")
