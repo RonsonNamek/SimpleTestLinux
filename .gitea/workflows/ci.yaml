@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  matrix-build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        compiler:
+          - { name: clang, version: 19 }
+          - { name: gcc, version: 14 }
+        build_type: [Debug, Release]
+
+    name: Build (${{ matrix.compiler.name }}-${{ matrix.compiler.version }} ${{ matrix.build_type }} ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    container:
+      image: appflow-ci/${{ matrix.compiler.name }}:${{ matrix.compiler.version }}
+#      image: ${{ matrix.compiler.name == 'clang' && 'teeks99/clang-ubuntu' || matrix.compiler.name }}:${{ matrix.compiler.version }}
+
+    env:
+      CC: ${{ matrix.compiler.name }}
+      CXX: ${{ matrix.compiler.name }}++
+      NPROC: ${{ github.actions.runs.vars.NPROC || 4 }}
+
+    steps:
+      - name: Print event name
+        run: |
+          echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
+          echo "🖥️ This job is now running on ${{ runner.os }} (${{ matrix.os }}) with ${{ matrix.compiler.name }}"
+          echo "🔎 The name of your branch is ${{ gitea.ref }} and your repository is ${{ gitea.repository }}."
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$TUMBLEWEED_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "Host gitea.nameksirius.me" >> ~/.ssh/config
+          echo "  HostName gitea.nameksirius.me" >> ~/.ssh/config
+          echo "  Port 46" >> ~/.ssh/config
+          echo "  User git" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
+          ssh-keyscan -p 46 gitea.nameksirius.me >> ~/.ssh/known_hosts
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.TUMBLEWEED_SSH_PRIVATE_KEY }}
+
+      - name: Configure project
+        run: |
+          mkdir -p build
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_C_COMPILER=$CC \
+                -DCMAKE_CXX_COMPILER=$CXX \
+                -S . \
+                -B build \
+                -G Ninja
+
+      - name: Build project
+        run: cmake --build build --parallel $NPROC
