@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     FLAGS_log_dir = "./";
 #endif
 
-    google::EnableLogCleaner(7);
+    google::EnableLogCleaner(std::chrono::minutes(10080)); // 7 days
     google::InitGoogleLogging(argv[0]);
 
     LOG(INFO) << argv[0] << " version:" << simpletest::version::Major << "."
