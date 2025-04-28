@@ -45,13 +45,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE CACHE INTERNAL "required cxx 23")
 message(STATUS "CMAKE_CXX_COMPILE_ID: ${CMAKE_CXX_COMPILER_ID}")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_link_options(-stdlib=libc++)
+    add_compile_options(-stdlib=libc++)
 endif()
 
 #set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
 SET(BUILD_SHARED_LIBS ON)
 
 # 编译选项
-add_compile_options(-stdlib=libc++)
 
 # 更新 git 子模块
 find_package(Git)
