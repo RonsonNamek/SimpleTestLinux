@@ -13,8 +13,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         compiler:
-          - { name: clang, cxx: 'clang++', version: 19 }
-          - { name: gcc, cxx: 'g++', version: 14 }
+          - { name: clang, cxx: 'clang++', version: latest }
+          - { name: gcc, cxx: 'g++', version: latest }
         build_type: [Debug, Release]
 
     name: Build (${{ matrix.compiler.name }}-${{ matrix.compiler.version }} ${{ matrix.build_type }} ${{ matrix.os }})
